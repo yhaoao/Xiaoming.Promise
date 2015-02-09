@@ -15,7 +15,7 @@ var Xiaoming = Xiaoming || {};
 
     this.state = 'fullfilled';
     this.value = value;
-    this._handleThen();
+    this._handleThe();
 
     return this;
   }
@@ -29,6 +29,17 @@ var Xiaoming = Xiaoming || {};
 
     return this;
   }
+
+  // TODO: additional helpers
+  Promise.prototype.done = function() {};
+
+  Promise.prototype.always = function() {};
+
+  Promise.prototype.catch = function() {};
+
+  Promise.prototype.when = function() {};
+
+  Promise.prototype.all = function() {};
 
   Promise.prototype.then = function(onFullfilled, onRejected) {
     var then = {};
@@ -45,21 +56,25 @@ var Xiaoming = Xiaoming || {};
 
   Promise.prototype._handleThen = function() {
     for (var i = 0, ii = this.pending.length; i < ii; i++) {
+      // nextPromise 为 then 之后的 promise
+      // returnValue 为 onFullfilled/onRejected 返回的 value/reason
+      var nextPromise = this.pending[i].promise;
       var returnValue = null;
+
       try {
         switch(this.state) {
           case 'fullfilled':
             returnValue = this.pending[i].onFullfilled(this.value);
-            this.pending[i].promise.resolve(returnValue);
+            nextPromise.resolve(returnValue);
             break;
           case 'rejected':
             returnValue = this.pending[i].onRejected(this.reason);
-            this.pending[i].promise.reject(returnValue);
+            nextPromise.reject(returnValue);
             break;
         }
 
         if (returnValue && (typeof returnValue.then === 'function')) {
-          this.pending[i].promise.then(this.pending[i].promise.resolve, this.pending[i].promise.reject);
+          nextPromise.then(nextPromise.resolve.call(this), nextPromise.reject.call(this));
         } 
       } catch(e) {
         this.pending[i].reject(e);
